@@ -1,2 +1,2 @@
 # LC2021
- LC2021 Board Firmware
+ LC2021 Firmware
