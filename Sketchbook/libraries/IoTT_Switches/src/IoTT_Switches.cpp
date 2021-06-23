@@ -223,7 +223,7 @@ void IoTT_SwitchBase::processServoComplex()
 {
 	if (currMoveMode == 0) //linear movement mode
 	{
-		uint16_t currPos = currentPos;
+		int16_t currPos = currentPos;
 		if (targetMove)
 		{
 //			Serial.println("Target");
@@ -706,26 +706,28 @@ void IoTT_GreenHat::begin(IoTT_SwitchList * ownerObj, uint8_t listIndex)
 	parentObj = ownerObj;
 	hatIndex = listIndex;
 //	ledAddr = 0x30 - hatIndex;
-	ghPWM = new Adafruit_PWMServoDriver(pwmDriverAddr - hatIndex, *parentObj->swiWire);
-	ghPWM->begin();
+	for (int i = 0; i < 2; i++)
+	{
+		ghPWM[i] = new Adafruit_PWMServoDriver(pwmDriverAddr + i, *parentObj->swiWire);
+		ghPWM[i]->begin();
+		ghPWM[i]->setPWMFreq(92); // Analog servos run at ~50 - 200 Hz updates. 92 is the closest I get to 100Hz measured
+	}
 	delay(10);
-	ghPWM->setPWMFreq(92); // Analog servos run at ~50 - 200 Hz updates. 92 is the closest I get to 100Hz measured
-    for (int i=0; i < 16; i++)
+    for (int i=0; i < 32; i++)
     {
-		ghPWM->setPWM(i, 0, 0); //Servo off
+		uint8_t ghIndex = trunc(i/16);
+		ghPWM[ghIndex]->setPWM((i % 16), 0, 0); //Servo off
 		delay(10);
 	}
     myButtons = new IoTT_Mux64Buttons();
-	myButtons->initButtonsI2C(&Wire, ioExtAddr - (2 * hatIndex), NULL, true); //use WiFi with buttons (always). ok for pin 36
+	myButtons->initButtonsDirect(false);
 	buttonHandler = new IoTT_LocoNetButtonList(); 
-
-    myChain = new IoTT_ledChain(&Wire, ledChainAddr, false);// - hatIndex); // set for using I2C Bus address 0x18
-    
 }
 
 void IoTT_GreenHat::freeObjects()
 {
-	delete ghPWM;
+	delete ghPWM[0];
+	delete ghPWM[1];
 	delete switchModList; //this should automatically call the destructor of each obj
 }
 
@@ -737,9 +739,7 @@ void IoTT_GreenHat::setGreenHatType(greenHatType newType)
 void IoTT_GreenHat::loadGreenHatCfgJSON(uint8_t fileNr, JsonObject thisObj, bool resetList)
 {
 //		"CfgFiles": ["gh/0/switches", "gh/0/btn", "gh/0/btnevt", "gh/0/led"]
-	
-//	Serial.printf("IoTT_GreenHat::loadGreenHatCfgJSON File Nr %i Reset %i \n", fileNr, resetList);
-	
+	Serial.printf("IoTT_GreenHat::loadGreenHatCfgJSON File Nr %i Reset %i \n", fileNr, resetList);
 	switch (fileNr)
 	{
 		case 0: //switches
@@ -757,17 +757,20 @@ void IoTT_GreenHat::loadGreenHatCfgJSON(uint8_t fileNr, JsonObject thisObj, bool
 						thisSwiMod = new(IoTT_ServoDrive);
 					else
 						thisSwiMod = new(IoTT_ComboDrive);
-					thisSwiMod->begin(this, i);
+					thisSwiMod->begin(this, switchModListLen + i);
 					thisSwiMod->loadSwitchCfgJSON(driverMods[i]);
 					switchModList[switchModListLen + i] = thisSwiMod;
 				}
 				switchModListLen += newListLen;
+				Serial.printf("%i servos\n", switchModListLen);
 			}
+			else
+				Serial.println("No Drivers");
 			break;
 		case 1: //buttons
 			if (thisObj.containsKey("Buttons"))
 				if (myButtons != NULL)
-					myButtons->loadButtonCfgI2CJSONObj(thisObj);
+					myButtons->loadButtonCfgDirectJSON(thisObj);
 				else
 					Serial.println("No Buttons defined");
 			else
@@ -776,28 +779,21 @@ void IoTT_GreenHat::loadGreenHatCfgJSON(uint8_t fileNr, JsonObject thisObj, bool
 		case 2: //button handler
 			if (thisObj.containsKey("ButtonHandler"))
 				if (buttonHandler != NULL)
-					buttonHandler->loadButtonCfgJSON(thisObj);
+//					Serial.println("Load Button Handler");
+					buttonHandler->loadButtonCfgJSON(thisObj, false);
 				else
 					Serial.println("No Button Handler defined");
 			else
 				Serial.println("No Button Handler");
-			break;
-		case 3: //LED
-			if (thisObj.containsKey("LEDDefs"))
-				if (myChain != NULL)
-					myChain->loadLEDChainJSONObj(thisObj);
-				else
-					Serial.println("No Chain defined");
-			else
-				Serial.println("No LEDChain");
 			break;
 	}
 }
 
 void IoTT_GreenHat::setPWMValue(uint8_t lineNr, uint16_t pwmVal)
 {
-//	Serial.printf("%i\n", pwmVal);
-	ghPWM->setPWM(lineNr, 0, pwrOK ? pwmVal : 0); //if external DC power missing, we shut down servo electrically
+//	Serial.printf("%i %i\n", lineNr, pwmVal);
+	uint8_t ghIndex = trunc(lineNr/16);
+	ghPWM[ghIndex]->setPWM((lineNr % 16), 0, pwrOK ? pwmVal : 0); //if external DC power missing, we shut down servo electrically
 	IoTT_SwitchBase * thisSwiMod = switchModList[lineNr];
 	if (pwmVal > 0)
 		thisSwiMod->endMoveTimeout = millis() + endMoveDelay;
@@ -815,17 +811,12 @@ void IoTT_GreenHat::processBtnEvent(sourceType inputEvent, uint16_t btnAddr, uin
 			IoTT_SwitchBase * thisSwiMod = switchModList[i];
 			thisSwiMod->processExtEvent(inputEvent, btnAddr, eventValue); //transponder info is not buffered, so we process the event
 		}
-		if (myChain)
-			myChain->processBtnEvent(inputEvent, btnAddr, eventValue);
 	}
 }
 
 bool IoTT_GreenHat::isVerified()
 {
-	if (myChain)
-		return myChain->isVerified();
-	else
-		return false;
+	return false;
 }
 
 void IoTT_GreenHat::processSwitch(bool extPwrOK)
@@ -833,8 +824,6 @@ void IoTT_GreenHat::processSwitch(bool extPwrOK)
 	pwrOK = extPwrOK;
 	if (millis() > startupTimer)
 	{
-//		if (startUpCtr == 0)
-//			myChain->refreshAnyway = true;
 		startupTimer += startupInterval;
 		startUpCtr = max(startUpCtr-1,0);
 	}
@@ -853,18 +842,8 @@ void IoTT_GreenHat::processSwitch(bool extPwrOK)
 	}
 	if (startUpCtr < 10)
 	{
-		if (myChain)
-		{
-			if (myChain->isVerified())
-				if (myButtons)
-					myButtons->processButtons();
-			if (millisElapsed(wdtResetTime) >= wdtInterval)
-			{
-				myChain->resetI2CWDT();
-				wdtResetTime = millis();
-			}
-			myChain->processChain();
-		}
+		if (myButtons)
+			myButtons->processButtons();
 	}
 }
 
@@ -909,8 +888,6 @@ void IoTT_GreenHat::loadRunTimeData(File * dataFile)
 
 void IoTT_GreenHat::identifyLED(uint16_t LEDNr)
 {
-	if (myChain)
-		myChain->identifyLED(LEDNr);
 }
 
 void IoTT_GreenHat::moveServo(uint8_t servoNr, uint16_t servoPos)
@@ -1029,7 +1006,7 @@ void IoTT_SwitchList::setGreenHatType(uint8_t modNr, greenHatType modType)
 
 void IoTT_SwitchList::loadSwCfgJSON(uint8_t ghNr, uint8_t fileNr, DynamicJsonDocument doc, bool resetList)
 {
-//	Serial.printf("IoTT_SwitchList::loadSwCfgJSON Module %i File %i\n", ghNr, fileNr);
+	Serial.printf("IoTT_SwitchList::loadSwCfgJSON Module %i File %i\n", ghNr, fileNr);
 	JsonObject thisObj = doc.as<JsonObject>();
 	greenHatList[ghNr]->loadGreenHatCfgJSON(fileNr, thisObj, resetList);
 	if (fileNr == 0)
@@ -1044,7 +1021,7 @@ void IoTT_SwitchList::identifyLED(uint16_t LEDNr)
 
 void IoTT_SwitchList::moveServo(uint8_t servoNr, uint16_t servoPos)
 {
-	uint8_t ghNr = trunc(servoNr / 16);
+	uint8_t ghNr = trunc(servoNr / 32);
 //	Serial.printf("GreenHat Index %i\n", ghNr);
-	greenHatList[ghNr]->moveServo(servoNr % 16, servoPos);
+	greenHatList[ghNr]->moveServo(servoNr % 32, servoPos);
 }

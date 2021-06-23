@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <IoTT_ButtonTypeDef.h>
 #include <IoTT_RemoteButtons.h> //as introduced in video # 29, special version for Wire connection via 328P
 #include <IoTT_LocoNetButtons.h> //as introduced in video # 29
-#include <IoTT_LEDChain.h> //as introduced in video # 30
 
 #define sgn(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
@@ -37,9 +36,8 @@ enum driveType : byte {dualcoilAC=0, dualcoilDC=1, bipolarcoil=2, stallmotor=3, 
 enum greenHatType : byte {comboModule=1, servoModule=0};
 
 const uint16_t refreshInterval = 8000; //microseconds
-const uint8_t ledChainAddr = 0x33;
 const uint8_t ioExtAddr = 0x06;
-const uint8_t pwmDriverAddr = 0x43;
+const uint8_t pwmDriverAddr = 0x40;
 const uint8_t ghInterval = 5; //ms delay between calls to process function
 const uint8_t wdtInterval = 100; //ms delay between calls to process function
 const uint16_t startupInterval = 500; //ms delay for decrementing startup counter
@@ -106,7 +104,7 @@ public:
 	uint16_t  extSwiPos = 0xFFFF;
 //	uint16_t targetPos = minPos;
 	aspectEntry * targetMove = NULL;
-	uint16_t currentPos = 0;
+	int16_t currentPos = 0;
 	uint32_t nextMoveWait = refreshInterval;
 	uint32_t lastMoveTime = micros();
 	float_t currSpeed = 0;
@@ -154,12 +152,11 @@ public:
 	void loadRunTimeData(File * dataFile);
 	void identifyLED(uint16_t LEDNr);
 private:
-	Adafruit_PWMServoDriver * ghPWM = NULL;
+	Adafruit_PWMServoDriver * ghPWM[2] = {NULL, NULL}; //32 PWM outputs
 	IoTT_SwitchBase ** switchModList = NULL;
 	uint16_t switchModListLen = 0;
 	IoTT_Mux64Buttons * myButtons = NULL;
 	IoTT_LocoNetButtonList * buttonHandler = NULL; 
-	IoTT_ledChain * myChain = NULL;
 	greenHatType modType = servoModule;
 	uint8_t hatIndex = 0;
 	uint8_t oddCtr = 0;

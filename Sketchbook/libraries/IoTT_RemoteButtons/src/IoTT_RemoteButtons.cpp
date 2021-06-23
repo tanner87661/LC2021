@@ -116,9 +116,10 @@ void IoTT_Mux64Buttons::loadButtonCfgDirectJSON(DynamicJsonDocument doc) //used 
 			myTouch->nextPeriodicUpdateTime = millis() + analogRefreshInterval; 
 			myTouch->lastEvtPtr = 0;
 			myTouch->gpioPin = Buttons[i]["PinNr"];
-			pinMode(myTouch->gpioPin, INPUT);
+			pinMode(myTouch->gpioPin, INPUT_PULLUP);
 			myTouch->btnAddr = Buttons[i]["ButtonAddr"];
 			myTouch->btnTypeDetected = getButtonTypeByName(Buttons[i]["ButtonType"]);
+			Serial.printf("Init Button %i Pin %i Addr %i\n", i, myTouch->gpioPin, myTouch->btnAddr);
 			myTouch->btnEventMask = Buttons[i]["EventMask"];
 			if (myTouch->btnEventMask == 0)
 				myTouch->btnEventMask = 0x1F; //activate all events in case there was no EventMask field. Use no events is 0x20
@@ -158,7 +159,7 @@ void IoTT_Mux64Buttons::loadButtonCfgI2CJSON(DynamicJsonDocument doc) //used for
 
 void IoTT_Mux64Buttons::loadButtonCfgI2CJSONObj(JsonObject doc) //used GreenHat (called from Switches.cpp)
 {
-//	Serial.println("loadButtonCfgI2CJSON");
+	Serial.println("loadButtonCfgI2CJSON");
 	if (doc.containsKey("DblClickThreshold"))
 		setDblClickRate((int)doc["DblClickThreshold"]);
     if (doc.containsKey("HoldThreshold"))
