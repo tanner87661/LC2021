@@ -1,4 +1,4 @@
-char BBVersion[] = {'0','1','D'};
+char BBVersion[] = {'0','9','0'};
 
 //#define measurePerformance //uncomment this to display the number of loop cycles per second
 //Arduino published libraries. Install using the Arduino IDE or download from Github and install manually
@@ -68,8 +68,10 @@ String apPassword; //AP password, will load from node.cfg
 bool wifiAlwaysOn = false; //set to false to shut Wifi after some time of inactivity. Gateway and MQTT should be disabled, though
 bool wifiCancelled = false; //true if Wifi was switched off due to no use
 uint32_t lastWifiUse = millis();
-#define wifiShutTimeout 120000 //after 2 Mins of not using, Wifi is closed
-#define apShutTimeout 180000 //after 3 Mins of not using, AP is shut. 3 Min to give enough time to connect to the AP from a PC
+#define wifiShutTimeout 300000 //after 5 Mins of not using, Wifi is closed
+#define apShutTimeout 300000 //after 5 Mins of not using, AP is shut. 3 Min to give enough time to connect to the AP from a PC
+//#define wifiShutTimeout 120000 //after 2 Mins of not using, Wifi is closed
+//#define apShutTimeout 180000 //after 3 Mins of not using, AP is shut. 3 Min to give enough time to connect to the AP from a PC
 
 String bufferFileName = "/buffers.dat";
 

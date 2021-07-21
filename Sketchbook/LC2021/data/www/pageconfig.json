@@ -9,7 +9,7 @@
 		{"Menue":"USB Serial", "ProdSel":[2], "CommSel":[], "ALMSel":[],  "WebPage": "USBSerial.htm", "ID":"pgUSBCfg", "FileName": "usb"}, 
 		{"Menue":"LB Server", "ProdSel":[], "CommSel":[11,12,13,14,15], "ALMSel":[],  "WebPage": "LBServer.htm", "ID":"pgLBSCfg", "FileName": "lbserver"}, 
 		{"Menue":"Smart Throttle", "ProdSel":[5], "CommSel":[], "ALMSel":[],  "WebPage": "Throttle.htm", "ID":"pgThrottleCfg", "FileName": "throttle"}, 
-		{"Menue":"LC2021", "ProdSel":[4], "CommSel":[], "ALMSel":[],  "WebPage": "LC2021.htm", "ID":"pgGreenHatCfg", "FileName": "greenhat"}, 
+		{"Menue":"CMMME Prima", "ProdSel":[4], "CommSel":[], "ALMSel":[],  "WebPage": "CMMME.htm", "ID":"pgGreenHatCfg", "FileName": "greenhat"}, 
 		{"Menue":"LocoNet Viewer", "ProdSel":[], "CommSel":[2,3,4,11,12,13,14,15,16], "ALMSel":[],  "WebPage": "LNViewer.htm", "ID":"pgLNViewer", "FileName": ""},
 		{"Menue":"OpenLCB Viewer", "ProdSel":[], "CommSel":[5,6,7], "ALMSel":[],  "WebPage": "OLCBViewer.htm", "ID":"pgOLCBViewer", "FileName": ""},
 		{"Menue":"MQTT Viewer", "ProdSel":[], "CommSel":[8], "ALMSel":[],  "WebPage": "MQTTViewer.htm", "ID":"pgMQTTViewer", "FileName": ""},

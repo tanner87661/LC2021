@@ -18,7 +18,7 @@ void establishWifiConnection(AsyncWebServer * webServer,DNSServer * dnsServer)
         //in seconds
         Serial.println("Set STA Mode");
         wifiManager.setTimeout(120); 
-        String hlpStr = "LC2021_" + String((uint32_t)ESP.getEfuseMac());
+        String hlpStr = "CMMME_" + String((uint32_t)ESP.getEfuseMac());
         if (!wifiManager.autoConnect(hlpStr.c_str()))
         {
           Serial.println("failed to connect and hit timeout, setting up AP, if configured, otherwise restart ESP32");

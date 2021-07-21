@@ -80,8 +80,9 @@ body, html {
   float: left; 
   width: 100%; 
   padding:5px;
-  height: 12%;
-  background:green;
+  height: 150px;
+//  height: 12%;
+  background:gray;
 }
 
 .tabsectionbox {
@@ -206,11 +207,11 @@ body, html {
   text-align: left;
 }
 
-.inputtext_float {
-  float: left; 
-  text-align: left;
-  text-indent: 5%;
-}
+//.inputtext_float {
+//  float: left; 
+//  text-align: left;
+//  text-indent: 5%;
+//}
 
 .inputtext_tab1 {
   float: left; 

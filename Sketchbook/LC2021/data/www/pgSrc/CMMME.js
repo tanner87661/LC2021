@@ -1089,48 +1089,42 @@ function runTemplate(sender)
 	var templBtn2 = JSON.parse(JSON.stringify(btnCfgData[workCfg].Buttons[(2 * templId) + 1]));
 	var templEvt1 = JSON.parse(JSON.stringify(evtHdlrCfgData[workCfg].ButtonHandler[2 * templId]));
 	var templEvt2 = JSON.parse(JSON.stringify(evtHdlrCfgData[workCfg].ButtonHandler[(2 * templId) + 1]));
-	var templLED1 = JSON.parse(JSON.stringify(ledData[workCfg].LEDDefs[(2 * templId) + 1]));
-	var templLED2 = JSON.parse(JSON.stringify(ledData[workCfg].LEDDefs[(2 * templId) + 2]));
 	var startIndex = Math.min(16, Math.max(1, document.getElementById("startchannel").value));
 	var endIndex = Math.max(1, Math.min(16, document.getElementById("endchannel").value));
 	var incrSwi =  parseInt(document.getElementById("mainaddrincr").value);
 	var incrBtn =  parseInt(document.getElementById("btnaddrincr").value);
-	var incrCtrlAddr =  parseInt(document.getElementById("evtaddrincr").value);
+//	if ((incrSwi <= 0) || (incrBtn <= 0))
+//	{
+//		alert("Increment values for switches and buttons must be greater than zero! Please try again");
+//		return;
+//	}
+
 	updateServoPos = false;
+	
 	for (var i = startIndex; i <= endIndex; i++)
 	{
 		swiCfgData[workCfg].Drivers[i-1] = JSON.parse(JSON.stringify(templSwi));
 		swiCfgData[workCfg].Drivers[i-1].Addr = incrementAddr(swiCfgData[workCfg].Drivers[i-1].Addr, (i-startIndex) * incrSwi);
-		btnCfgData[workCfg].Buttons[2 * (i-1)] = JSON.parse(JSON.stringify(templBtn1));
-		btnCfgData[workCfg].Buttons[2 * (i-1)].PortNr = 2 * (i-1);
-		btnCfgData[workCfg].Buttons[2 * (i-1)].ButtonAddr = incrementAddr(btnCfgData[workCfg].Buttons[2 * (i-1)].ButtonAddr, (i-startIndex) * incrBtn);
-		btnCfgData[workCfg].Buttons[2 * (i-1)+1] = JSON.parse(JSON.stringify(templBtn2));
-		btnCfgData[workCfg].Buttons[2 * (i-1)+1].PortNr = 2 * (i-1)+1;
-		btnCfgData[workCfg].Buttons[2 * (i-1)+1].ButtonAddr = incrementAddr(btnCfgData[workCfg].Buttons[2 * (i-1)+1].ButtonAddr, (i-startIndex) * incrBtn);
 
 		evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)] = JSON.parse(JSON.stringify(templEvt1));
-		evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].ButtonNr += (i-startIndex) * incrBtn;
+		evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].ButtonNr = templEvt1.ButtonNr == 0 ? 0 : incrementAddr(templEvt1.ButtonNr, (i-startIndex) * incrBtn);
+		if (evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].ButtonNr > 16) evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].ButtonNr = 0;
+		if (evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].ButtonNr < 0) evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].ButtonNr = 0;
+
 		for (var j = 0; j < evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].CtrlCmd.length; j++)
 			if (evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].CtrlCmd[j].CmdList[0] != undefined)
-				evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].CtrlCmd[j].CmdList[0].CtrlAddr += (i-startIndex) * incrCtrlAddr;
+				evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)].CtrlCmd[j].CmdList[0].CtrlAddr = swiCfgData[workCfg].Drivers[i-1].Addr; //+= (i-startIndex) * incrSwi;
+		setButtonDisplay(evtHdlrCfgData[workCfg].ButtonHandler, i-1, 0);
 		evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1] = JSON.parse(JSON.stringify(templEvt2));
-		evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].ButtonNr += (i-startIndex) * incrBtn;
+		evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].ButtonNr = templEvt2.ButtonNr == 0 ? 0 : incrementAddr(templEvt2.ButtonNr, (i-startIndex) * incrBtn);
+		if (evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].ButtonNr > 16) evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].ButtonNr = 0;
+		if (evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].ButtonNr < 0) evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].ButtonNr = 0;
+
+
 		for (var j = 0; j < evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].CtrlCmd.length; j++)
 			if (evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].CtrlCmd[j].CmdList[0] != undefined)
-				evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].CtrlCmd[j].CmdList[0].CtrlAddr += (i-startIndex) * incrCtrlAddr;
-
-//		ledData[workCfg].LEDDefs[2 * (i-1)+1] = JSON.parse(JSON.stringify(templLED1));
-//		ledData[workCfg].LEDDefs[2 * (i-1)+1].LEDNums = [2 * (i-1)+1];
-//		if (ledOptionArray.indexOf(ledData[workCfg].LEDDefs[2 * (i-1)+1].CtrlSource) == 0)
-//			ledData[workCfg].LEDDefs[2 * (i-1)+1].CtrlAddr = incrementAddr(swiCfgData[workCfg].Drivers[i-1].Addr, 0);
-//		else
-//			ledData[workCfg].LEDDefs[2 * (i-1)+1].CtrlAddr = incrementAddr(btnCfgData[workCfg].Buttons[2 * (i-1)].ButtonAddr, 0);
-//		ledData[workCfg].LEDDefs[2 * (i-1)+2] = JSON.parse(JSON.stringify(templLED2));
-//		ledData[workCfg].LEDDefs[2 * (i-1)+2].LEDNums = [2 * (i-1)+2];
-//		if (ledOptionArray.indexOf(ledData[workCfg].LEDDefs[2 * (i-1)+1].CtrlSource) == 0)
-//			ledData[workCfg].LEDDefs[2 * (i-1)+2].CtrlAddr = incrementAddr(swiCfgData[workCfg].Drivers[i-1].Addr, 0);
-//		else
-//			ledData[workCfg].LEDDefs[2 * (i-1)+2].CtrlAddr = incrementAddr(btnCfgData[workCfg].Buttons[2 * (i-1)+1].ButtonAddr, 0);
+				evtHdlrCfgData[workCfg].ButtonHandler[2 * (i-1)+1].CtrlCmd[j].CmdList[0].CtrlAddr = swiCfgData[workCfg].Drivers[i-1].Addr; //+= (i-startIndex) * incrSwi;
+		setButtonDisplay(evtHdlrCfgData[workCfg].ButtonHandler, i-1, 1);
 	}
 	loadTableData(switchTable, swiCfgData[workCfg].Drivers, btnCfgData[workCfg].Buttons, evtHdlrCfgData[workCfg].ButtonHandler, ledData[workCfg].LEDDefs);
 	templateDlg.style.display = "none";
@@ -1191,7 +1185,7 @@ function startTemplateDialog(parentObj, templateChannel)
 				level3Div.setAttribute('style', "height: 50px; width:100%"); 
 				dlgTextDispArea.append(level3Div);
 				createTextInput(level3Div, "tile-1_2", "Increment Button Address by:", "2", "btnaddrincr", "");
-				createTextInput(level3Div, "tile-1_2", "Increment Button Event Address by:", "2", "evtaddrincr", "");
+//				createTextInput(level3Div, "tile-1_2", "Increment Button Event Address by:", "2", "evtaddrincr", "");
 
 /*
 				level4Div = document.createElement("div"); //global var
@@ -2019,7 +2013,7 @@ function constructPageContent(contentTab)
 {
 	var tempObj;
 	mainScrollBox = createEmptyDiv(contentTab, "div", "pagetopicboxscroll-y", "btnconfigdiv");
-		createPageTitle(mainScrollBox, "div", "tile-1", "", "h1", "LC2021 Setup");
+		createPageTitle(mainScrollBox, "div", "tile-1", "", "h1", "CMMME Prima Setup");
 		tempObj = createEmptyDiv(mainScrollBox, "div", "tile-1", "useExpertMode");
 //			createCheckbox(tempObj, "tile-1_4", "Expert Mode", "cbUseExpertMode", "setExpertMode(this)");
 

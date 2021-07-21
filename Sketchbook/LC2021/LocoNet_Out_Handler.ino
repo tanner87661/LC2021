@@ -3,6 +3,8 @@
 
 void sendSwitchCommand(uint8_t opCode, uint16_t swiNr, uint8_t swiTargetPos, uint8_t coilStatus)
 {
+
+//  Serial.printf("Switch %i\n", swiNr);
   uint8_t currPos = getSwiStatus(swiNr); //((swiPos[swiNr >> 2] >> (2 * (swiNr % 4))) & 0x03) << 4);
 //  Serial.print("currPos ");
 //  Serial.println(currPos);
@@ -77,14 +79,12 @@ void sendSignalCommand(uint16_t signalNr, uint8_t signalAspect)
   sendMsg(txData);
 }
 
-void sendBlockDetectorCommand(uint16_t bdNr, uint8_t bdStatus)
-{
-//  Serial.printf("Block Detector Nr %i Status %i \n", bdNr, bdStatus);
+void sendBlockDetectorCommand(uint16_t bdNr, uint8_t bdStatus) { //  Serial.printf("Block Detector Nr %i Status %i \n", bdNr, bdStatus);
   lnTransmitMsg txData;
   txData.lnMsgSize = 4;
   txData.lnData[0] = 0xB2; //OPC_INPUT_REP
   txData.lnData[1] = (bdNr & 0x00FE)>>1;
-  txData.lnData[2] = (bdNr & 0x0F00)>>7;
+  txData.lnData[2] = (bdNr & 0x0F00)>>8;
   if ((bdNr & 0x0001) > 0)
     txData.lnData[2] |= 0x20;
   if (bdStatus > 0)

@@ -159,10 +159,10 @@ void updateOneShotBuffer(char dispStr[])
 
 void notifyDccAccTurnoutOutput(uint16_t Addr, uint8_t Direction, uint8_t OutputPower )
 {
-  setSwitchStatus(Addr-1, Direction, OutputPower);
+  setSwitchStatus(Addr, Direction, OutputPower);
   char dispStr[100];  
-  sprintf(dispStr, "Swi %u %s %s", Addr, Direction==0? "Th":"Cl", OutputPower==0?"Off":"On");
-  Serial.println(dispStr);
+  sprintf(dispStr, "Swi %u %s %s", Addr+1, Direction==0? "Th":"Cl", OutputPower==0?"Off":"On");
+//  Serial.println(dispStr);
   updateOneShotBuffer(dispStr);
 /*
   if (lnMQTT)
