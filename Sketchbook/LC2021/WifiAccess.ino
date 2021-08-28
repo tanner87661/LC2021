@@ -1,5 +1,37 @@
+TaskHandle_t taskHandleBlink = NULL;
+
+void burstLED(uint8_t outData, uint8_t burstLen)
+{
+    for (uint8_t i = 0; i < burstLen; i++)             
+      Serial.write(outData);
+    Serial.println();
+}
+void blinkTask(void * thisParam)
+{
+  while (true)
+  {
+    bool posLog = (*((uint8_t *) thisParam)) == 0x01;
+    burstLED(0x00, 10);
+    if (((!posLog) && (globalClient != NULL)) || (posLog && (WiFi.status() == WL_CONNECTED)))
+    {
+      delay(250);
+      burstLED(0x00, 10);
+    }
+    delay(posLog ? 2000 : 500);
+  }
+}
+
 void establishWifiConnection(AsyncWebServer * webServer,DNSServer * dnsServer)
 {
+  if (taskHandleBlink == NULL)
+    xTaskCreate(    blinkTask,        /* Task function. */
+                    "BlinkTask",      /* String with name of task. */
+                    10000,            /* Stack size in bytes. */
+                    &wifiCfgMode,     /* Parameter passed as input of the task */
+                    1,                /* Priority of the task. */
+                    &taskHandleBlink);            /* Task handle. */
+ 
+
     AsyncWiFiManager wifiManager(webServer,dnsServer);
     //reset settings - for testing
 //    wifiManager.resetSettings();
@@ -58,6 +90,11 @@ void checkWifiTimeout() //check if wifi can be switched off
         WiFi.disconnect(); 
         WiFi.mode(WIFI_OFF);
         delay(100); 
+        if (taskHandleBlink)
+        {
+          vTaskDelete(taskHandleBlink);
+          taskHandleBlink = NULL;
+        }
         Serial.println("Wifi disabled. Restart device to re-enable");
       }
     }

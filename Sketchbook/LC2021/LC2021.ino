@@ -1,4 +1,4 @@
-char BBVersion[] = {'0','9','0'};
+char BBVersion[] = {'1','0','0'};
 
 //#define measurePerformance //uncomment this to display the number of loop cycles per second
 //Arduino published libraries. Install using the Arduino IDE or download from Github and install manually
@@ -630,7 +630,7 @@ void setup() {
           Serial.println("Init LocoNet Loopback for local buttons");  
           lnSerial = new LocoNetESPSerial(); //UART2 by default
           lnSerial->begin(); //Initialize as Loopback
-          lnSerial->setBusyLED(stickLED, false);
+//          lnSerial->setBusyLED(stickLED, false);
           lnSerial->setLNCallback(callbackLocoNetMessage);
         } 
         Wire.begin(hatSDA, hatSCL, 400000); //initialize the I2C interface
@@ -866,6 +866,7 @@ void loop() {
       {
         Serial.println("Reconnect WiFi");
         establishWifiConnection(myWebServer,dnsServer);
+        startWebServer();
       }
     }
 /*
