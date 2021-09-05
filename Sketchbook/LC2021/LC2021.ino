@@ -1,4 +1,4 @@
-char BBVersion[] = {'1','0','0'};
+char BBVersion[] = {'1','0','1'};
 
 //#define measurePerformance //uncomment this to display the number of loop cycles per second
 //Arduino published libraries. Install using the Arduino IDE or download from Github and install manually
@@ -372,7 +372,7 @@ void setup() {
       // Setup which External Interrupt, the Pin it's associated with that we're using and enable the Pull-Up 
       myDcc->pin(groveRxD, 0);
       // Call the main DCC Init function to enable the DCC Receiver
-      myDcc->init(MAN_ID_DIY, 10, FLAGS_CV29_BITS, 1);
+      myDcc->init(MAN_ID_DIY, 10, FLAGS_CV29_BITS, 0);
 //      myDcc->init(MAN_ID_DIY, 10, FLAGS_OUTPUT_ADDRESS_MODE, 1);
       Serial.println("DCC Init Done");
     }
