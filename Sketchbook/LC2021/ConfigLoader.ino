@@ -36,8 +36,10 @@ void deleteAllFiles(String ofNameType, String startDir, String fileExt, bool las
   while (thisFile)
   {
     String hlpStr = thisFile.name();
-    for (int i = 0; i < 10; i++)
-      hlpStr.replace(String(i), "?");
+    uint8_t extDot = hlpStr.lastIndexOf('.');
+    for (int i = 0; i < 3; i++)
+      if (isDigit(hlpStr[extDot-i]))
+        hlpStr[extDot-i] = '?';
     hlpStr.replace("???", "?");
     hlpStr.replace("??", "?");
     if (hlpStr == startDir + "/" + ofNameType + "." + fileExt)
