@@ -1,4 +1,4 @@
-char BBVersion[] = {'1','0','1'};
+char BBVersion[] = {'1','0','2'};
 
 //#define measurePerformance //uncomment this to display the number of loop cycles per second
 //Arduino published libraries. Install using the Arduino IDE or download from Github and install manually
@@ -102,7 +102,7 @@ uint32_t myTimer = millis() + 1000;
 //constexpr gpio_num_t groveRxCAN = GPIO_NUM_33; //for OpenLCB CAN
 //constexpr gpio_num_t groveTxCAN = GPIO_NUM_32; //for OpenLCB CAN
  
-#define stickLED 1 //red LED on stick
+#define stickLED 2 //red LED on stick
 #define hatSDA 21 //changes between input and output by I2C master
 #define hatSCL 22 //pull SCL low while sending non I2C data over SDA
 //#define hatRxD 22
@@ -623,6 +623,8 @@ void setup() {
 
     if (useHat.devId == 4) //GreenHat
     {
+      pinMode(stickLED, OUTPUT);
+      digitalWrite(stickLED, 1);
         Serial.println("Init GreenHat");  
         //if Comm Interfae = DCC or DCC from MQTT, we also initialize LocoNet Loopback top enable local buttons
         if ((useInterface.devId == 1) || (useInterface.devId == 10)) //DCC or DCC from MQTT
