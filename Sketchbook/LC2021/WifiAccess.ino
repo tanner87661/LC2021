@@ -2,11 +2,11 @@ TaskHandle_t taskHandleBlink = NULL;
 
 void burstLED(uint8_t outData, uint8_t burstLen)
 {
-    digitalWrite(stickLED, 0);
+//    digitalWrite(stickLED, 0);
     for (uint8_t i = 0; i < burstLen; i++)             
       Serial.write(outData);
     Serial.println();
-    digitalWrite(stickLED, 1);
+//    digitalWrite(stickLED, 1);
 }
 void blinkTask(void * thisParam)
 {

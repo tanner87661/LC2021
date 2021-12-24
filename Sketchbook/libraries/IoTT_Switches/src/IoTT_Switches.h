@@ -44,8 +44,10 @@ const uint16_t startupInterval = 500; //ms delay for decrementing startup counte
 const uint16_t endMoveDelay = 2500; //ms until servo shutoff after target is reached (if configured)
 #define minPos 210
 #define initPos 215
+#define posStorageTimeout 5000
 
-#define servoFileName "/servos.dat"
+#define servoFileName "/servos"
+#define servoFileExt ".dat"
 
 typedef struct
 {
@@ -72,12 +74,15 @@ public:
 	void processServoSimple();
 	void processServoComplex();
 	virtual void loadSwitchCfgJSON(JsonObject thisObj);
+	void saveRunTimeData(File * dataFile = NULL);
+	void loadRunTimeData(File * dataFile = NULL);
    
 private:
-   
    // Member functions
 public:
    // Member variables
+	uint32_t lastPosChgTime = millis();
+	bool posSaved = true;
 	uint8_t modIndex = 0;
 	driveType driverType = dualcoilAC;
 	sourceType srcType = evt_trackswitch;
@@ -97,6 +102,7 @@ public:
 	uint8_t aspectListLen = 0;
 	uint32_t endMoveTimeout = 0;
 	bool endMovePwrOff = false;
+	bool endMoveInitPulse = false;
 	aspectEntry * aspectList = NULL;
 	
 //runtime variables

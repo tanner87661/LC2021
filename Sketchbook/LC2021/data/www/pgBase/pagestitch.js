@@ -40,7 +40,7 @@ function upgradeJSONVersionGH(jsonData)
 {
 	jsonFileVersion = "1.0.0";
 	var thisVersion = jsonData.Version;
-	console.log(thisVersion);
+//	console.log(thisVersion);
 	if (thisVersion == jsonFileVersion)
 		return jsonData;
 	if (thisVersion == undefined)
@@ -54,9 +54,9 @@ function upgradeJSONVersionGH(jsonData)
 
 function upgradeJSONVersionSwitch(jsonData)
 {
-	var jsonFileVersion = "1.0.1";
+	var jsonFileVersion = "1.3.2";
 	var thisVersion = jsonData.Version;
-	console.log(thisVersion);
+//	console.log(thisVersion);
 	if (thisVersion == jsonFileVersion)
 		return jsonData;
 //	if ((isNaN(thisVersion)) || (thisVersion == undefined))
@@ -240,8 +240,6 @@ function addFileSeqLED(ofObj, cfgData) //object specific function to include par
 
 function addFileSeqBtnHdlr(ofObj, cfgData) //object specific function to include partial files
 {
-	console.log(ofObj);
-	console.log(cfgData);
 	for (var j=0; j<ofObj.Data.ButtonHandler.length; j++)
 	{
 		cfgData[1].ButtonHandler.push(JSON.parse(JSON.stringify(ofObj.Data.ButtonHandler[j])));
@@ -251,13 +249,15 @@ function addFileSeqBtnHdlr(ofObj, cfgData) //object specific function to include
 
 function addFileSeqSwi(ofObj, cfgData) //object specific function to include partial files
 {
-	console.log(ofObj);
-	console.log(cfgData);
+//	console.log(ofObj);
+//	console.log(JSON.parse(JSON.stringify(cfgData)));
 	for (var j=0; j<ofObj.Data.Drivers.length; j++)
 	{
 		cfgData[1].Drivers.push(JSON.parse(JSON.stringify(ofObj.Data.Drivers[j])));
 		cfgData[2] = JSON.parse(JSON.stringify(cfgData[1]));
+//		console.log(JSON.parse(JSON.stringify(cfgData[2])));
 	}
+//	console.log(JSON.parse(JSON.stringify(cfgData)));
 }
 
 function prepareFileSeqLED(configData, transferIndex) //object specific function to create partial files

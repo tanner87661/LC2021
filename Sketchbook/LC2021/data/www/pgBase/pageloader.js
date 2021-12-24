@@ -152,7 +152,7 @@ function sendDeleteFile(itemType, filenametype, filename, startIndex)
 	{
 //		if (dlgTextDispArea)
 		{
-			dlgTextDispArea.innerHTML += "Delete file " + filename + " from IoTT Stick\n";
+			dlgTextDispArea.innerHTML += "Delete file " + filename + " from CMMME Prima\n";
 			scrollTextArea();
 		}
 		var configStr = "{\"Cmd\":\"CfgUpdate\", \"FileNameType\": \"" + filenametype + "\", \"FileName\": \"" + filename + "\", \"Type\":\"" + itemType + "\", \"Index\":" + startIndex  + "}";
@@ -175,7 +175,6 @@ function startProgressDialog(parentObj)
 		var dlgDiv = document.createElement("div");
 		dlgDiv.setAttribute('class', "modal-content");
 		mainDlg.append(dlgDiv);
-	
 			var dlgSubDiv = document.createElement("div");
 			dlgSubDiv.setAttribute('class', "modal-header");
 			dlgDiv.append(dlgSubDiv);
@@ -200,7 +199,7 @@ function startProgressDialog(parentObj)
 			dlgSubDiv.setAttribute('class', "modal-footer");
 			dlgDiv.append(dlgSubDiv);
 				var dlgHeader = document.createElement("h3");
-				dlgHeader.innerHTML = "Thank you for using the IoTT Stick!";
+				dlgHeader.innerHTML = "Thank you for using the CMMME Prima Decoder!";
 				dlgSubDiv.append(dlgHeader);
 	
 	parentObj.append(mainDlg);
@@ -296,7 +295,7 @@ function sendSingleFile()
 		thisFileName += ".cfg";
 		var doRestart = (fileGroupIndex == transferData.length - 1) && (fileSendIndex == thisTransferData.FileList.length - 1);
 		sendFileData(thisTransferData.Type, thisTransferData.FileName, thisFileName, JSON.stringify(thisTransferData.FileList[fileSendIndex]), doRestart);
-		dlgTextDispArea.innerHTML += "Send file " + thisFileName + " to IoTT Stick\n";
+		dlgTextDispArea.innerHTML += "Send file " + thisFileName + " to CMMME Prima\n";
 		scrollTextArea();
 		fileSendIndex++; //now number of files sent so far
 
@@ -333,7 +332,7 @@ function sendMultiFile()
 		if (progressDlg ==  null)
 			progressDlg = startProgressDialog(document.getElementById("TabHolder"));
 		progressDlg.style.display = "block";
-		dlgTextDispArea.innerHTML += "Send file " + transferData[fileSendIndex].FileName + " to IoTT Stick\n";
+		dlgTextDispArea.innerHTML += "Send file " + transferData[fileSendIndex].FileName + " to CMMME Prima\n";
 		scrollTextArea();
 		sendFileData(transferData[fileSendIndex].Type, transferData[fileSendIndex].FileNameType, transferData[fileSendIndex].FileName, JSON.stringify(transferData[fileSendIndex].Data), fileSendIndex == transferData.length - 1);
 		fileSendIndex++;
@@ -481,7 +480,7 @@ function startWebsockets()
 			switch (myArr.FileMode)
 			{
 				case 1: //add file to list
-					dlgTextDispArea.innerHTML += "Receive file " + myArr.FileName + " from IoTT Stick\n";
+					dlgTextDispArea.innerHTML += "Receive file " + myArr.FileName + " from CMMME Prima\n";
 					scrollTextArea();
 					transferData.push(JSON.parse(JSON.stringify(myArr)));
 					break;

@@ -623,7 +623,7 @@ void setup() {
 
     if (useHat.devId == 4) //GreenHat
     {
-      pinMode(stickLED, OUTPUT);
+//      pinMode(stickLED, OUTPUT);
       digitalWrite(stickLED, 1);
         Serial.println("Init GreenHat");  
         //if Comm Interfae = DCC or DCC from MQTT, we also initialize LocoNet Loopback top enable local buttons

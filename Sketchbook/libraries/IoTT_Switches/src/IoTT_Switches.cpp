@@ -111,6 +111,8 @@ void IoTT_SwitchBase::loadSwitchCfgJSON(JsonObject thisObj)
 		for (uint8_t i = 0; i < switchAddrListLen; i++)
 			switchAddrList[i] = thisAddrList[i];
 	}
+	if ((switchAddrListLen > 1) && (srcType == evt_trackswitch))
+		srcType = evt_signalmastdyn; //if there is more than 1 address, we change to the dynamic mode. 3 Addr -> 6 positions
 	if (thisObj.containsKey("CondData"))
 	{
 		JsonArray thisCondDataList = thisObj["CondData"];
@@ -146,6 +148,10 @@ void IoTT_SwitchBase::loadSwitchCfgJSON(JsonObject thisObj)
 	}
 	if (thisObj.containsKey("PowerOff"))
 		endMovePwrOff = thisObj["PowerOff"];
+	if (thisObj.containsKey("InitPulse"))
+		endMoveInitPulse = thisObj["InitPulse"];
+	if (!endMovePwrOff)
+		endMoveInitPulse = true;
 
 
 
@@ -355,10 +361,14 @@ void IoTT_SwitchBase::processServoComplex()
 							nextMoveWait = refreshInterval; //standard 1ms wait
 					}
 					parentObj->setPWMValue(modIndex, round(currentPos));
+					lastPosChgTime = millis();
+					posSaved = false;
 				}
 			}
 			else
 			{
+				if ((!posSaved) && (millis() - lastPosChgTime) > posStorageTimeout)
+					saveRunTimeData();
 				if ((endMovePwrOff) && (endMoveTimeout < millis()) && (endMoveTimeout > 0))
 				{
 					endMoveTimeout = 0;
@@ -392,6 +402,8 @@ void IoTT_SwitchBase::processServoComplex()
 				//PWM to targetPos - abs(newAmpl)
 				pwmVal = moveUp ? pwmVal + currVal : pwmVal - currVal;
 			parentObj->setPWMValue(modIndex, pwmVal);
+			lastPosChgTime = millis();
+			posSaved = false;
 //			endMoveTimeout = millis() + endMoveDelay;
 		} 
 		else //done, back to linear mode
@@ -399,7 +411,13 @@ void IoTT_SwitchBase::processServoComplex()
 			if (endMovePwrOff)
 				parentObj->setPWMValue(modIndex, 0);
 			else
+			{
 				parentObj->setPWMValue(modIndex, currentPos);
+				lastPosChgTime = millis();
+				posSaved = false;
+			}
+			if ((!posSaved) && (millis() - lastPosChgTime) > posStorageTimeout)
+				saveRunTimeData();
 			currMoveMode = 0; 
 			currSpeed = 0; 
 //			endMoveTimeout = millis() + endMoveDelay;
@@ -437,16 +455,118 @@ void IoTT_SwitchBase::processServoSimple()
 					nextMoveWait = refreshInterval;
 				}
 				parentObj->setPWMValue(modIndex, currentPos);
+				lastPosChgTime = millis();
+				posSaved = false;
 //				endMoveTimeout = millis() + endMoveDelay;
 			}
 		}
 		else
+		{
 			if ((endMovePwrOff) && (endMoveTimeout < millis()) && (endMoveTimeout > 0))
 			{
 				endMoveTimeout = 0;
 				parentObj->setPWMValue(modIndex, 0);
 			}
+			if ((!posSaved) && (millis() - lastPosChgTime) > posStorageTimeout)
+				saveRunTimeData();
+		}
 }
+
+void IoTT_SwitchBase::saveRunTimeData(File * dataFile)
+{
+	bool tmpFile = false;
+	File diskFile;
+	if (dataFile == NULL)
+	{
+		String diskFileName = servoFileName + String("_mod") + String(modIndex) + String(servoFileExt);
+		diskFile = SPIFFS.open(diskFileName, "w");
+		dataFile = &diskFile;
+		tmpFile = true;
+	}
+	if (dataFile)
+	{
+		uint8_t buf[2] = {0,0};
+		buf[0] = (currentPos >> 8);
+		buf[1] = (currentPos & 0x00FF);
+//		Serial.printf("%i %02X %02X\n", currentPos, buf[0], buf[1]);
+		dataFile->write(buf, 2);
+		buf[0] = (extSwiPos >> 8);
+		buf[1] = (extSwiPos & 0x00FF);
+//		Serial.printf("%02X %02X %02X \n", extSwiPos, buf[0], buf[1]);
+		dataFile->write(buf, 2);
+		if (tmpFile)
+		{
+			dataFile->close();
+//			Serial.println("Close File");
+		}
+		posSaved = true;
+//		Serial.printf("Write Curr: %02X ext: %02X\n", currentPos, extSwiPos);
+	}
+}
+
+void IoTT_SwitchBase::loadRunTimeData(File * dataFile)
+{
+	bool tmpFile = false;
+	File diskFile;
+	if (dataFile == NULL)
+	{
+		String diskFileName = servoFileName + String("_mod") + String(modIndex) + String(servoFileExt);
+		if (SPIFFS.exists(diskFileName))
+		{
+			diskFile = SPIFFS.open(diskFileName, "r");
+			if (diskFile.size() == 4)
+			{
+				dataFile = &diskFile;
+				tmpFile = true;
+			}
+		}
+	}
+	if (dataFile)
+	{
+		uint8_t buf[2];
+		dataFile->read(buf,2);
+		currentPos = (int16_t)((buf[0]<<8) + buf[1]); 
+//		Serial.printf("%i %02X %02X Size %i\n", currentPos, buf[0], buf[1], dataFile->size());
+		if (endMoveInitPulse)
+			currentPos++; //incr by 1 to make sure it is processed during startup
+		dataFile->read(buf,2);
+		extSwiPos = (buf[0]<<8) + buf[1];
+//		Serial.printf("%02X %02X %02X \n", extSwiPos, buf[0], buf[1]);
+		if (tmpFile)
+			dataFile->close();
+//		Serial.printf("Read Curr Pos %02X Ext Pos %02X\n", currentPos, extSwiPos);
+		switch (srcType) //set digitrax buffers accordingly to avoid init moves
+		{
+			case evt_trackswitch: //single switch address, just initialize address
+			{
+//				Serial.printf("%i Track Switch to pos %i\n", modIndex, extSwiPos);
+				setSwitchStatus(switchAddrList[0], extSwiPos, 0);
+				break; 
+			}
+			case evt_signalmastdyn: //multiple addresses, initialize last acording to extSwiPos
+			{
+				setSwitchStatus(switchAddrList[extSwiPos>>1], extSwiPos, 0);
+				uint32_t hlpAct = getLastSwitchActivity(switchAddrList[extSwiPos>>1]);
+//				Serial.printf("%i Dyn Signal %i to aspect  %i\n", modIndex, switchAddrList[extSwiPos>>1], extSwiPos);
+				break; 
+			}
+			case evt_signalmastdcc: //single address, set aspect
+			{
+//				Serial.printf("%i DCC Signal %i to aspect %i\n", modIndex, switchAddrList[0], extSwiPos);
+				
+				setSignalAspect(switchAddrList[0], extSwiPos);
+				break; 
+			}
+		}
+	}
+	else
+	{
+//		Serial.println("No data file, InitPos");
+		currentPos = (int16_t) initPos;
+		extSwiPos = 0;
+	}
+}
+
 
 //------------2----------------------------------------------------------------------------------------------------
 IoTT_ServoDrive::IoTT_ServoDrive():IoTT_SwitchBase()
@@ -484,6 +604,8 @@ void IoTT_ServoDrive::processExtEvent(sourceType inputEvent, uint16_t btnAddr, u
 			processServoSimple();
 		else
 			processServoComplex();
+		lastPosChgTime = millis();
+		posSaved = false;
 	}
 }
 
@@ -496,9 +618,8 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 			uint16_t swiStatus = 0;
 			for (int8_t i = (switchAddrListLen-1); i >= 0; i--) //check for the latest position
 				swiStatus = (2 * swiStatus) + ((getSwiPosition(switchAddrList[i]) >> 5) & 0x01);
-			if ((swiStatus != extSwiPos) && aspectList[swiStatus].isUsed)
+			if (((swiStatus != extSwiPos) || endMoveInitPulse) && aspectList[swiStatus].isUsed)
 			{
-//				Serial.printf("Ext Tg Move 475 %i %i\n", extSwiPos, swiStatus);
 				targetMove = &aspectList[swiStatus];
 				extSwiPos = swiStatus;
 //				Serial.printf("Updating Static Switch %i Addr  for Status %i  \n", switchAddrListLen, swiStatus);
@@ -513,6 +634,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 			for (uint8_t i = 0; i < switchAddrListLen; i++) //check for the latest activity
 			{
 				hlpAct = getLastSwitchActivity(switchAddrList[i]);
+//				Serial.printf("Testing %i %i\n", switchAddrList[i], hlpAct);
 				if (hlpAct > lastAct)
 				{
 					dynSwi = i;
@@ -521,15 +643,15 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 			}
 			if (lastAct != 0) //we have activity
 			{
+//				Serial.printf("last active %i\n", switchAddrList[dynSwi]);
 				uint8_t aspectNr = dynSwi * 2;
 				if (((getSwiPosition(switchAddrList[dynSwi]) >> 4) & 0x02) > 0)
 					aspectNr++; //this is the final aspect #
-				if ((extSwiPos != aspectNr)  && aspectList[aspectNr].isUsed)
+				if (((extSwiPos != aspectNr) || endMoveInitPulse)  && aspectList[aspectNr].isUsed)
 				{
-//				Serial.println("Ext Tg Move 503");
 					targetMove = &aspectList[aspectNr];
 					extSwiPos = aspectNr;
-//					Serial.printf("Updating Aspect %i  for Switch %i\n", aspectNr, switchAddrList[dynSwi]);
+//					Serial.printf("Updating Aspect %i  for dyn Switch %i\n", aspectNr, switchAddrList[dynSwi]);
 				}
 			}
 			break;
@@ -538,7 +660,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 		{
 			uint16_t sigAddress = switchAddrList[0];
 			uint8_t sigAspect = getSignalAspect(sigAddress);
-			if (sigAspect != extSwiPos)
+			if ((sigAspect != extSwiPos) || endMoveInitPulse)
 			{
 //				Serial.printf("Get %i Ext %i\n", sigAspect, extSwiPos);
 				uint16_t newSwiPos = sigAspect;
@@ -558,7 +680,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 						nextVal = aspectList[i].aspectID[0];
 					}
 				}
-				if (aspectList[nextInd].aspectID[0] != extSwiPos)
+				if ((aspectList[nextInd].aspectID[0] != extSwiPos) || endMoveInitPulse)
 				{
 					if (aspectList[nextInd].isUsed)
 						targetMove = &aspectList[nextInd];
@@ -569,7 +691,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 			break;
 		}
 		case evt_analogvalue:
-			if (getAnalogValue(switchAddrList[0]) != extSwiPos)
+			if ((getAnalogValue(switchAddrList[0]) != extSwiPos) || endMoveInitPulse)
 			{
 				extSwiPos = getAnalogValue(switchAddrList[0]);
 				if (((aspectList[1].isUsed) || (aspectList[2].isUsed)) && (condDataListLen > 0))  //use individual aspects
@@ -612,7 +734,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 		case evt_button: 
 		{
 			uint8_t newBtnVal = getButtonValue(switchAddrList[0]);
-			if (newBtnVal != extSwiPos)
+			if ((newBtnVal != extSwiPos) || endMoveInitPulse)
 			{
 				if (newBtnVal <= aspectListLen)
 					if (aspectList[newBtnVal].isUsed)
@@ -629,7 +751,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 			uint16_t swiStatus = 0;
 			for (int8_t i = (switchAddrListLen-1); i >= 0; i--) //check for the latest position
 				swiStatus = (2 * swiStatus) + (getBDStatus(switchAddrList[i]) & 0x01);
-			if ((swiStatus != extSwiPos) && aspectList[swiStatus].isUsed)
+			if (((swiStatus != extSwiPos) || endMoveInitPulse) && aspectList[swiStatus].isUsed)
 			{
 				targetMove = &aspectList[swiStatus];
 				extSwiPos = swiStatus;
@@ -646,6 +768,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 //			Serial.printf("Call switchtype %i \n", srcType);
 			break;
 	}
+	endMoveInitPulse = false;
 	if (extPwrOK)
 		if (targetMove)
 		{
@@ -656,6 +779,7 @@ void IoTT_ServoDrive::processSwitch(bool extPwrOK)
 		}
 		else
 		{
+//			Serial.println("No Target Move Addr");
 			if ((endMovePwrOff) && (endMoveTimeout < millis()) && (endMoveTimeout > 0))
 			{
 				endMoveTimeout = 0;
@@ -791,7 +915,8 @@ void IoTT_GreenHat::loadGreenHatCfgJSON(uint8_t fileNr, JsonObject thisObj, bool
 
 void IoTT_GreenHat::setPWMValue(uint8_t lineNr, uint16_t pwmVal)
 {
-//	Serial.printf("%i %i\n", lineNr, pwmVal);
+//	if (lineNr == 0)
+//		Serial.printf("%i pos %i\n", lineNr, pwmVal);
 	uint8_t ghIndex = trunc(lineNr/16);
 	ghPWM[ghIndex]->setPWM((lineNr % 16), 0, pwrOK ? pwmVal : 0); //if external DC power missing, we shut down servo electrically
 	IoTT_SwitchBase * thisSwiMod = switchModList[lineNr];
@@ -801,7 +926,6 @@ void IoTT_GreenHat::setPWMValue(uint8_t lineNr, uint16_t pwmVal)
 
 void IoTT_GreenHat::processBtnEvent(sourceType inputEvent, uint16_t btnAddr, uint16_t eventValue)
 {
-//	Serial.println("Btn Evt");
 	if (buttonHandler) 
 		buttonHandler->processBtnEvent(inputEvent, btnAddr, eventValue); //drives the outgoing buffer and time delayed commands
 	if (inputEvent == evt_transponder)
@@ -853,12 +977,7 @@ void IoTT_GreenHat::saveRunTimeData(File * dataFile)
 	for (int i=0; i < switchModListLen; i++)
 	{
 		IoTT_SwitchBase * thisSwiMod = switchModList[i];
-		buf[0] = (thisSwiMod->currentPos >> 8);
-		buf[1] = (thisSwiMod->currentPos & 0x00FF);
-		dataFile->write(buf, 2);
-		buf[0] = (thisSwiMod->extSwiPos >> 8);
-		buf[1] = (thisSwiMod->extSwiPos & 0x00FF);
-		dataFile->write(buf, 2);
+		thisSwiMod->saveRunTimeData(dataFile);
 	}
 }
 
@@ -869,20 +988,7 @@ void IoTT_GreenHat::loadRunTimeData(File * dataFile)
 	for (int i=0; i < switchModListLen; i++)
 	{
 		thisSwiMod = switchModList[i];
-		if (dataFile)
-		{
-			dataFile->read(buf,2);
-			thisSwiMod->currentPos = (buf[0]<<8) + buf[1]; //incr by 1 to make sure it is processed during startup
-			dataFile->read(buf,2);
-			thisSwiMod->extSwiPos = (buf[0]<<8) + buf[1];
-			Serial.printf("Curr Pos %i Swi Pos %i\n", thisSwiMod->currentPos, thisSwiMod->extSwiPos);
-		}
-		else
-		{
-//			Serial.println("No data file, InitPos");
-			thisSwiMod->currentPos = initPos;
-		}
-//		setPWMValue(i, 0); //set power to 0 at this time
+		thisSwiMod->loadRunTimeData(dataFile);
 	}
 }
 
@@ -934,7 +1040,7 @@ void IoTT_SwitchList::saveRunTimeData()
 {
 	for (int i=0; i < greenHatListLen; i++)
 	{
-		File dataFile = SPIFFS.open(servoFileName + String(i), "w");
+		File dataFile = SPIFFS.open(servoFileName + String(i) + String(servoFileExt), "w");
 		if (dataFile)
 		{
 			greenHatList[i]->saveRunTimeData(&dataFile);
@@ -950,8 +1056,9 @@ void IoTT_SwitchList::saveRunTimeData()
 
 void IoTT_SwitchList::loadRunTimeData(uint8_t ghNr)
 {
-    File dataFile = SPIFFS.open(servoFileName + String(ghNr), "r");
-    if ((dataFile) && (dataFile.size() == 64))
+    File dataFile = SPIFFS.open(servoFileName + String(ghNr) + String(servoFileExt), "r");
+    Serial.println(dataFile.size());
+    if ((dataFile) && (dataFile.size() >= 128))
     {
 		greenHatList[ghNr]->loadRunTimeData(&dataFile);
 		dataFile.close();
@@ -962,7 +1069,8 @@ void IoTT_SwitchList::loadRunTimeData(uint8_t ghNr)
 		if (dataFile)
 			dataFile.close();
 		greenHatList[ghNr]->loadRunTimeData(NULL);
-		Serial.println("Unable to read Servo File " + String(ghNr) + "Runtime Data");
+		Serial.println("Unable to read Servo File " + String(ghNr) + " Runtime Data");
+//		saveRunTimeData();
 	}
 }
 

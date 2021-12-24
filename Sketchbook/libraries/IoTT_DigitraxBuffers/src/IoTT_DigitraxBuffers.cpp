@@ -18,7 +18,7 @@ typedef struct
 	uint16_t devAddr;
 }protocolEntry;
 
-const uint8_t switchProtLen = 20;
+const uint8_t switchProtLen = 32; //large enough to hold init records
 protocolEntry switchProtocol[switchProtLen];
 uint8_t swWrPtr = 0;
 bool bushbyWatch = false;
@@ -78,6 +78,7 @@ void setSwitchStatus(uint16_t swiNum, bool swiPos, bool coilStatus)
 {
 	uint16_t byteNr = trunc(swiNum/4);
 	uint8_t inpPosStat = 0;
+//	Serial.println("Add to protocol");
 	swWrPtr = (swWrPtr + 1) % switchProtLen;
 	switchProtocol[swWrPtr].devAddr = swiNum;
 	switchProtocol[swWrPtr].lastActivity = millis();
