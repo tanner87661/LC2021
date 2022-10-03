@@ -2,7 +2,8 @@
 
 This Library gets the Unique ID / Manufacture Serial Number from the Atmel AVR, SAM, SAMD, STM32, and ESP Microcontroller.
 
-[![Build Status](https://travis-ci.org/ricaun/ArduinoUniqueID.svg?branch=master)](https://travis-ci.org/ricaun/ArduinoUniqueID)
+[![Compile Sketch](https://github.com/ricaun/ArduinoUniqueID/actions/workflows/Compile-Sketch.yml/badge.svg)](https://github.com/ricaun/ArduinoUniqueID/actions)
+
 
 # Microcontrollers
 
@@ -13,11 +14,13 @@ ArduinoUniqueID supports the [Microcontrollers](MCU.md).
 * Atmel SAMD ARM
 * STM32
 * Espressif ESP
+* Teensy
+* Raspberry Pi Pico - RP2040
 
 # Installation
 
 * Install the library by [Using the Library Manager](https://www.arduino.cc/en/Guide/Libraries#toc3)
-* **OR** by [Importing the .zip library](https://www.arduino.cc/en/Guide/Libraries#toc4) using either the [master](https://github.com/ricaun/ArduinoUniqueID/archive/1.0.9.zip) or one of the [releases](https://github.com/ricaun/ArduinoUniqueID/releases) ZIP files.
+* **OR** by [Importing the .zip library](https://www.arduino.cc/en/Guide/Libraries#toc4) using either the [master](https://github.com/ricaun/ArduinoUniqueID/archive/1.2.0.zip) or one of the [releases](https://github.com/ricaun/ArduinoUniqueID/releases) ZIP files.
 
 ## Examples
 

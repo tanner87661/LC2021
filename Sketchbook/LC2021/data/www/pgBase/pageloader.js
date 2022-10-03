@@ -405,13 +405,16 @@ function loadInitData()
 //	console.log("loadInitData");
 	if (wsInitNode)
 	{
-		if (scriptList.Pages[currentPage].ID != "pgNodeCfg")
+		if (scriptList != undefined)
 		{
-			ws.send("{\"Cmd\":\"CfgData\", \"Type\":\"pgNodeCfg\", \"FileName\": \"node\"}");
-//			console.log("{\"Cmd\":\"CfgData\", \"Type\":\"pgNodeCfg\", \"FileName\": \"node\"}");
+			if (scriptList.Pages[currentPage].ID != "pgNodeCfg")
+			{
+				ws.send("{\"Cmd\":\"CfgData\", \"Type\":\"pgNodeCfg\", \"FileName\": \"node\"}");
+//				console.log("{\"Cmd\":\"CfgData\", \"Type\":\"pgNodeCfg\", \"FileName\": \"node\"}");
+			}
+			else
+				wsInitNode = false;
 		}
-		else
-			wsInitNode = false;
 		setTimeout(loadInitData, 1000);
 	}
 	else

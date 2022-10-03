@@ -635,7 +635,10 @@ void setup() {
 //          lnSerial->setBusyLED(stickLED, false);
           lnSerial->setLNCallback(callbackLocoNetMessage);
         } 
-        Wire.begin(hatSDA, hatSCL, 400000); //initialize the I2C interface
+        Wire.begin(hatSDA, hatSCL);//, 400000); //initialize the I2C interface 400kHz
+        delay(10);
+        Wire.setClock(400000);
+        delay(10);
         jsonDataObj = getDocPtr("/configdata/greenhat.cfg", true);
         if (jsonDataObj != NULL)
           if (jsonDataObj->containsKey("Modules"))
